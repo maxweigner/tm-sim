@@ -115,17 +115,17 @@ void parse_steps(char steps[MAX_STEPS_NUM][VARS_IN_STEP][MAX_STEPS_SIZE], char i
   char buf[BUFSIZE] = {'\0'}; // buffer
   short buf_index = 0; // tracks index of next char in buffer 
   short sem_count = 0; // tracks the number of semicolons counted
-  short steps_start_index = 0; // index of first char after definition
+  short input_start_index = 0; // index of first char after definition
   short sym_count = 0; // counts ',' and '-' symbols
 
   // get index where tm steps start
   do {
-    if (input[steps_start_index++] == ';') { sem_count++; }
+    if (input[input_start_index++] == ';') { sem_count++; }
   } while (sem_count < 4);
 
   sem_count = 0; // reset count for context switch
 
-  for (int i = steps_start_index; i < strlen(input); ++i) {
+  for (int i = input_start_index; i < strlen(input); ++i) {
     // buf_reset cant be default
     switch (input[i]) {
       case '-':
@@ -199,21 +199,13 @@ int main(int argc, char *argv[]) {
   /*
    * DEBUG PRINTING TO STDOUT
    */
-  printf("%i : %s : %s : %s\n", tim.bands, tim.start, tim.accept, tim.reject);
-
-  for (int i = 0; i < VARS_IN_STEP; ++i) {
-  printf("%s ", steps[0][i]);
+  printf("%i %s %s %s\n", tim.bands, tim.start, tim.accept, tim.reject);
+  
+  for (int i = 0; i < 9; ++i) {
+    for (int j = 0; j < VARS_IN_STEP; ++j) {
+    printf("%s ", steps[i][j]);
+    }
+    printf("\n");
   }
-  printf("\n");
-
-  for (int i = 0; i < VARS_IN_STEP; ++i) {
-  printf("%s ", steps[5][i]);
-  }
-  printf("\n");
-
-  for (int i = 0; i < VARS_IN_STEP; ++i) {
-  printf("%s ", steps[8][i]);
-  }
-  printf("\n");
 }
 
