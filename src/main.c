@@ -75,45 +75,11 @@ void clean_string(char input[], char io) {
 
 void clean_input(char input[]) {
   clean_string(input, 'i');
-  // // create new string where input gets parsed into
-  // char rem[MAX_INPUT_SIZE] = {'\0'};
-  //
-  // int rem_index = 0; // tracks index of next char
-  // int input_length = strlen(input); // just read the code
-  //
-  // for (int i = 0; i < input_length; ++i) {
-  //   if (input[i] == ' ' || input[i] == '\n') {
-  //     continue;
-  //   }
-  //   
-  //   // copy the char if it isnt one of the above
-  //   rem[rem_index++] = input[i];
-  // }
-  //
-  // memset(input, '\0', input_length); // reset input
-  // memcpy(input, rem, strlen(rem)); // save cleaned input
 }
 
 
 void clean_output(char output[]) {
   clean_string(output, 'o');
-  // // create new string where input gets parsed into
-  // char rem[MAX_INPUT_SIZE] = {'\0'};
-  //
-  // int rem_index = 0; // tracks index of next char
-  // int output_length = strlen(output); // just read the code
-  //
-  // for (int i = 0; i < output_length; ++i) {
-  //   if (output[i] == '_') {
-  //     continue;
-  //   }
-  //   
-  //   // copy the char if it isnt one of the above
-  //   rem[rem_index++] = output[i];
-  // }
-  //
-  // memset(output, '\0', output_length); // reset input
-  // memcpy(output, rem, strlen(rem)); // save cleaned input
 }
 
 
@@ -280,7 +246,7 @@ void run_tm(struct state* state) {
 
 
 // runs the simulator
-void start_tm(char input_band[], char output_band[]) {
+void start_tm(char tm[], char input_band[], char output_band[]) {
   memset(output_band, '\0', strlen(output_band));
 
   if (tim.start == tim.accept) {
@@ -292,6 +258,17 @@ void start_tm(char input_band[], char output_band[]) {
     return;
   }
 
+  // clean up input
+  clean_input(tm);
+  clean_input(input_band);
+
+  // parse defining features of tm
+  parse_definition(tm);
+  
+  // parse conversion steps of tm
+  parse_steps(tm);
+
+  char output[MAX_INPUT_SIZE] = {'\0'};
   struct state state = {{'\0'}, {'\0'}, 0};
 
   strcpy(state.state, tim.start);
@@ -304,38 +281,9 @@ void start_tm(char input_band[], char output_band[]) {
 }
 
 
-void test(char input[]) {
-  // clean up input
-  clean_input(input);
-
-  // input needs to be smaller than that arbitrary input max
-  if (strlen(input) > MAX_INPUT_SIZE) {
-    printf("Input Size too large!\nCurrent max: %i\n", MAX_INPUT_SIZE);
-    return;
-  }
-
-  // parse defining features of tm
-  parse_definition(input);
-  
-  // parse conversion steps of tm
-  parse_steps(input);
-
-  char output[MAX_INPUT_SIZE] = {'\0'};
-
-  start_tm("0100", output);
-  printf("0100 -> %s\n", output);
-
-  start_tm("0101", output);
-  printf("0101 -> %s\n", output);
-
-  start_tm("1111", output);
-  printf("1111 -> %s\n", output);
-}
-
-
 int main(int argc, char *argv[]) {
   // tm that increments the input
-  char input1[] =
+  char tm1[] =
     "1; q0; q3; q4;"
     "q0, 0 -> q0, 0, > ;"
     "q0, 1 -> q0, 1, > ;"
@@ -347,8 +295,8 @@ int main(int argc, char *argv[]) {
     "q2, 0 -> q2, 0, < ;"
     "q2, _ -> q3, _, >";
   
-  // tm that decrements the output
-  char input2[] =
+  // tm that decrements the input
+  char tm2[] =
     "1; q0; q3; q4;"
     "q0, 0 -> q0, 0, >;"
     "q0, 1 -> q6, 1, >;"
@@ -365,7 +313,8 @@ int main(int argc, char *argv[]) {
     "q5, 1 -> q5, 1, <;"
     "q5, _ -> q3, _, >";
 
-  char input3[] =
+  // tm that doubles the input
+  char tm3[] =
     "1; q0; q2; q3;"
     "q0, 0 -> q0, 0, >;"
     "q0, 1 -> q0, 1, >;"
@@ -373,12 +322,57 @@ int main(int argc, char *argv[]) {
     "q1, 0 -> q1, 0, <;"
     "q1, 1 -> q1, 1, <;"
     "q1, _ -> q2, _, >";
+  
+  char output[MAX_INPUT_SIZE] = {'\0'};
 
+  char band1[] = "0110 1001 0101 1010 1111 0000 1111 0000";
+  char band2[] = "1001 0110 1010 0101 0110 1001 0101 1010";
+  char band3[] = "1111 0000 1111 0000 1001 0110 1010 0101";
+
+  //-----------------------------------------
   printf("INCREMENT\n");
-  test(input1);
+
+  start_tm(tm1, band1, output);
+  printf("INP: %s\nOUT: %s\n\n", band1, output);
+  memset(output, '\0', strlen(output));
+
+  start_tm(tm1, band2, output);
+  printf("INP: %s\nOUT: %s\n\n", band2, output);
+  memset(output, '\0', strlen(output));
+  
+  start_tm(tm1, band3, output);
+  printf("INP: %s\nOUT: %s\n\n", band3, output);
+  memset(output, '\0', strlen(output));
+  
+  //-----------------------------------------
   printf("\n\nDECREMENT\n");
-  test(input2);
+
+  start_tm(tm2, band1, output);
+  printf("INP: %s\nOUT: %s\n\n", band1, output);
+  memset(output, '\0', strlen(output));
+  
+  start_tm(tm2, band2, output);
+  printf("INP: %s\nOUT: %s\n\n", band2, output);
+  memset(output, '\0', strlen(output));
+  
+  start_tm(tm2, band3, output);
+  printf("INP: %s\nOUT: %s\n\n", band3, output);
+  memset(output, '\0', strlen(output));
+
+  //-----------------------------------------
   printf("\n\nFUNCTION 2*X\n");
-  test(input3);
+  
+  start_tm(tm3, band1, output);
+  printf("INP: %s\nOUT: %s\n\n", band1, output);
+  memset(output, '\0', strlen(output));
+  
+  start_tm(tm3, band2, output);
+  printf("INP: %s\nOUT: %s\n\n", band2, output);
+  memset(output, '\0', strlen(output));
+  
+  start_tm(tm3, band3, output);
+  printf("INP: %s\nOUT: %s\n\n", band3, output);
+  memset(output, '\0', strlen(output));
+  //-----------------------------------------
 }
 
