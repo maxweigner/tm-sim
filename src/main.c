@@ -20,20 +20,39 @@
 // max size of single entry in step
 #define MAX_STEPS_SIZE 16
 
-//
+// number of variables contained in a single step
 #define VARS_IN_STEP 5
 
 
 // here are the defining features of the tm 
 struct tm {
-  short bands               ;
-  char  start  [STATE_SIZE] ;
-  char  accept [STATE_SIZE] ;
-  char  reject [STATE_SIZE] ;
+  short bands;
+  char  start  [STATE_SIZE];
+  char  accept [STATE_SIZE];
+  char  reject [STATE_SIZE];
 };
 
 
-void clean_input(char input[]) {
+struct state {
+  char  state [STATE_SIZE]    ;
+  char  band  [MAX_INPUT_SIZE];
+  long  band_location;
+};
+
+
+struct tm tim = {0, {'\0'}, {'\0'}, {'\0'}};
+char steps[MAX_STEPS_NUM][VARS_IN_STEP][MAX_STEPS_SIZE] = {{{'\0'}}};
+
+
+void clean_string(char input[], char io) {
+  char c1 = ' ';
+  char c2 = '\n';
+
+  if (io == 'o') {
+    c1 = '_';
+    c2 = '_';
+  }
+
   // create new string where input gets parsed into
   char rem[MAX_INPUT_SIZE] = {'\0'};
 
@@ -41,7 +60,7 @@ void clean_input(char input[]) {
   int input_length = strlen(input); // just read the code
 
   for (int i = 0; i < input_length; ++i) {
-    if (input[i] == ' ' || input[i] == '\n') {
+    if (input[i] == c1 || input[i] == c2) {
       continue;
     }
     
@@ -51,6 +70,50 @@ void clean_input(char input[]) {
 
   memset(input, '\0', input_length); // reset input
   memcpy(input, rem, strlen(rem)); // save cleaned input
+}
+
+
+void clean_input(char input[]) {
+  clean_string(input, 'i');
+  // // create new string where input gets parsed into
+  // char rem[MAX_INPUT_SIZE] = {'\0'};
+  //
+  // int rem_index = 0; // tracks index of next char
+  // int input_length = strlen(input); // just read the code
+  //
+  // for (int i = 0; i < input_length; ++i) {
+  //   if (input[i] == ' ' || input[i] == '\n') {
+  //     continue;
+  //   }
+  //   
+  //   // copy the char if it isnt one of the above
+  //   rem[rem_index++] = input[i];
+  // }
+  //
+  // memset(input, '\0', input_length); // reset input
+  // memcpy(input, rem, strlen(rem)); // save cleaned input
+}
+
+
+void clean_output(char output[]) {
+  clean_string(output, 'o');
+  // // create new string where input gets parsed into
+  // char rem[MAX_INPUT_SIZE] = {'\0'};
+  //
+  // int rem_index = 0; // tracks index of next char
+  // int output_length = strlen(output); // just read the code
+  //
+  // for (int i = 0; i < output_length; ++i) {
+  //   if (output[i] == '_') {
+  //     continue;
+  //   }
+  //   
+  //   // copy the char if it isnt one of the above
+  //   rem[rem_index++] = output[i];
+  // }
+  //
+  // memset(output, '\0', output_length); // reset input
+  // memcpy(output, rem, strlen(rem)); // save cleaned input
 }
 
 
@@ -74,28 +137,28 @@ void buf_reset(char arr[]) {
 }
 
 
-void parse_definition(char arr[], struct tm* tim) {
+void parse_definition(char input[]) {
   char buf[BUFSIZE] = {'\0'}; // buffer
   short buf_index = 0; // tracks next char in buffer
   short sem_count = 0; // tracks count of semicolons
 
-  for (int i = 0; i < strlen(arr); ++i) {
-    if (arr[i] == ';') {
+  for (int i = 0; i < strlen(input); ++i) {
+    if (input[i] == ';') {
       switch (sem_count) {
         case 0: // copy over amount of bands
-          (*tim).bands = buf_sum(buf);
+          tim.bands = buf_sum(buf);
           break;
 
         case 1: // copy over starting state
-          memcpy((*tim).start, buf, STATE_SIZE-1);
+          memcpy(tim.start, buf, STATE_SIZE-1);
           break;
 
         case 2: // copy over accepting state
-          memcpy((*tim).accept, buf, STATE_SIZE-1);
+          memcpy(tim.accept, buf, STATE_SIZE-1);
           break;
 
         case 3: // copy over rejecting state
-          memcpy((*tim).reject, buf, STATE_SIZE-1);
+          memcpy(tim.reject, buf, STATE_SIZE-1);
           return;
       }
       
@@ -106,12 +169,12 @@ void parse_definition(char arr[], struct tm* tim) {
       i++; // skip the semicolon
     }    
 
-    buf[buf_index++] = arr[i]; // copy next char to buffer
+    buf[buf_index++] = input[i]; // copy next char to buffer
   }
 }
 
 
-void parse_steps(char steps[MAX_STEPS_NUM][VARS_IN_STEP][MAX_STEPS_SIZE], char input[]) {
+void parse_steps(char input[]) {
   char buf[BUFSIZE] = {'\0'}; // buffer
   short buf_index = 0; // tracks index of next char in buffer 
   short sem_count = 0; // tracks the number of semicolons counted
@@ -164,10 +227,115 @@ void parse_steps(char steps[MAX_STEPS_NUM][VARS_IN_STEP][MAX_STEPS_SIZE], char i
 }
 
 
+// returns the index in steps array of the applicable step
+void run_tm(struct state* state) {
+  // while neither accepting or rejecting state are reached
+  while (strcmp(tim.accept, (*state).state) && strcmp(tim.reject, (*state).state)) {
+    // go over every possible step and
+    for (int i = 0; i < MAX_STEPS_NUM; ++i) {
+      char band = 
+        (*state).band_location > strlen((*state).band) -1 ||
+        (*state).band_location < 0 
+        ? '_' : (*state).band[(*state).band_location];
+      
+      // if satisfying below conditions, execute step
+      if (!strcmp(steps[i][0], (*state).state) && band == steps[i][1][0]) {
+        // print the used step
+        // printf("%s %s -> %s %s %s\n", steps[i][0], steps[i][1], steps[i][2], steps[i][3], steps[i][4]);
+
+        // shift entire band right if modifying left of band
+        if ((*state).band_location < 0) {
+          long band_size = strlen((*state).band);
+
+          for (int i = band_size -1; i > -1; --i) {
+            (*state).band[i+1] = (*state).band[i];
+          }
+
+          (*state).band_location++;
+        }
+
+        (*state).band[(*state).band_location] = steps[i][3][0];
+        memset((*state).state, '\0', STATE_SIZE);
+        strcpy((*state).state, steps[i][2]);
+
+        switch (steps[i][4][0]) {
+          case '>':
+            (*state).band_location++;
+            break;
+          
+          case '<':
+            (*state).band_location--;
+            break;
+          
+          case '-':
+            // no change
+            break;
+        }
+
+        break;
+      }
+    }
+  }
+}
+
+
+// runs the simulator
+void start_tm(char input_band[], char output_band[]) {
+  memset(output_band, '\0', strlen(output_band));
+
+  if (tim.start == tim.accept) {
+    printf("do you actually want me to do something?\n");
+    return;
+
+  } else if (strlen(input_band) > MAX_INPUT_SIZE) {
+    printf("input too big, aborting\n");
+    return;
+  }
+
+  struct state state = {{'\0'}, {'\0'}, 0};
+
+  strcpy(state.state, tim.start);
+  strcpy(state.band, input_band);
+  
+  run_tm(&state);
+  
+  clean_output(state.band);
+  strcpy(output_band, state.band);
+}
+
+
+void test(char input[]) {
+  // clean up input
+  clean_input(input);
+
+  // input needs to be smaller than that arbitrary input max
+  if (strlen(input) > MAX_INPUT_SIZE) {
+    printf("Input Size too large!\nCurrent max: %i\n", MAX_INPUT_SIZE);
+    return;
+  }
+
+  // parse defining features of tm
+  parse_definition(input);
+  
+  // parse conversion steps of tm
+  parse_steps(input);
+
+  char output[MAX_INPUT_SIZE] = {'\0'};
+
+  start_tm("0100", output);
+  printf("0100 -> %s\n", output);
+
+  start_tm("0101", output);
+  printf("0101 -> %s\n", output);
+
+  start_tm("1111", output);
+  printf("1111 -> %s\n", output);
+}
+
+
 int main(int argc, char *argv[]) {
-  // for testing purposes
   // tm that increments the input
-  char input[] =
+  char input1[] =
     "1; q0; q3; q4;"
     "q0, 0 -> q0, 0, > ;"
     "q0, 1 -> q0, 1, > ;"
@@ -179,33 +347,38 @@ int main(int argc, char *argv[]) {
     "q2, 0 -> q2, 0, < ;"
     "q2, _ -> q3, _, >";
   
-  // clean up input
-  clean_input(input);
+  // tm that decrements the output
+  char input2[] =
+    "1; q0; q3; q4;"
+    "q0, 0 -> q0, 0, >;"
+    "q0, 1 -> q6, 1, >;"
+    "q0, _ -> q4, _, -;"
+    "q6, 0 -> q6, 0, >;"
+    "q6, 1 -> q6, 1, >;"
+    "q6, _ -> q1, _, <;"
+    "q1, 0 -> q2, 1, <;"
+    "q1, 1 -> q5, 0, <;"
+    "q1, _ -> q4, _, -;"
+    "q2, 0 -> q2, 1, <;"
+    "q2, 1 -> q5, 0, <;"
+    "q5, 0 -> q5, 0, <;"
+    "q5, 1 -> q5, 1, <;"
+    "q5, _ -> q3, _, >";
 
-  // input needs to be smaller than that arbitrary input max
-  if (strlen(input) > MAX_INPUT_SIZE) {
-    printf("Input Size too large!\nCurrent max: %i\n", MAX_INPUT_SIZE);
-    return 1;
-  }
+  char input3[] =
+    "1; q0; q2; q3;"
+    "q0, 0 -> q0, 0, >;"
+    "q0, 1 -> q0, 1, >;"
+    "q0, _ -> q1, 0, <;"
+    "q1, 0 -> q1, 0, <;"
+    "q1, 1 -> q1, 1, <;"
+    "q1, _ -> q2, _, >";
 
-  // parse defining features of tm
-  struct tm tim = {0, {'\0'}, {'\0'}, {'\0'}};
-  parse_definition(input, &tim);
-  
-  // parse conversion steps of tm
-  char steps[MAX_STEPS_NUM][5][MAX_STEPS_SIZE] = {{{'\0'}}};
-  parse_steps(steps, input);
-
-  /*
-   * DEBUG PRINTING TO STDOUT
-   */
-  printf("%i %s %s %s\n", tim.bands, tim.start, tim.accept, tim.reject);
-  
-  for (int i = 0; i < 9; ++i) {
-    for (int j = 0; j < VARS_IN_STEP; ++j) {
-    printf("%s ", steps[i][j]);
-    }
-    printf("\n");
-  }
+  printf("INCREMENT\n");
+  test(input1);
+  printf("\n\nDECREMENT\n");
+  test(input2);
+  printf("\n\nFUNCTION 2*X\n");
+  test(input3);
 }
 
