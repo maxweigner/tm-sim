@@ -24,7 +24,7 @@
 
 
 // here are the defining features of the tm 
-struct tm {
+struct turing {
   short bands;
   char  start  [STATE_SIZE];
   char  accept [STATE_SIZE];
@@ -39,7 +39,7 @@ struct state {
 };
 
 
-struct tm tim = {0, {'\0'}, {'\0'}, {'\0'}};
+struct turing tim = {0, {'\0'}, {'\0'}, {'\0'}};
 char steps[MAX_STEPS_NUM][VARS_IN_STEP][MAX_STEPS_SIZE] = {{{'\0'}}};
 
 
