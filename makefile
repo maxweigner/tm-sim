@@ -1,6 +1,6 @@
 default:
-	gcc -lm src/main.c -o main 
+	gcc -lm src/main.c src/util/dllist.c -o main 
 
 debug:
-	gcc --debug -lm src/main.c -o main 
+	gcc --debug -lm src/main.c src/util/dllist.c -o main 
 

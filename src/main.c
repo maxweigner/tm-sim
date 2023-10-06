@@ -1,6 +1,8 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "util/dllist.h"
 
 
 // BUFSIZE has to be larger than STATE_SIZE
@@ -280,6 +282,20 @@ void start_tm(char tm[], char input_band[], char output_band[]) {
 }
 
 
+void dll_test() {
+  struct dnode* start = malloc(sizeof(struct dnode));
+
+  dlist_append(start, 'b');
+  dlist_append(start, 'd');
+  
+  start = dlist_prepend(start, 'a');
+  
+  dlist_insert(start, 'c', 2);
+  
+  printf("%s\n", dlist_to_string(start));
+}
+
+
 int main(int argc, char *argv[]) {
   // tm that increments the input
   char tm1[] =
@@ -328,6 +344,9 @@ int main(int argc, char *argv[]) {
   char band2[] = "1001 0110 1010 0101 0110 1001 0101 1010";
   char band3[] = "1111 0000 1111 0000 1001 0110 1010 0101";
 
+  // dll_test();
+  // return 0;
+
   //-----------------------------------------
   printf("INCREMENT\n");
 
@@ -344,7 +363,7 @@ int main(int argc, char *argv[]) {
   memset(output, '\0', strlen(output));
   
   //-----------------------------------------
-  printf("\n\nDECREMENT\n");
+  printf("\nDECREMENT\n");
 
   start_tm(tm2, band1, output);
   printf("INP: %s\nOUT: %s\n\n", band1, output);
@@ -359,7 +378,7 @@ int main(int argc, char *argv[]) {
   memset(output, '\0', strlen(output));
 
   //-----------------------------------------
-  printf("\n\nFUNCTION 2*X\n");
+  printf("\nFUNCTION 2*X\n");
   
   start_tm(tm3, band1, output);
   printf("INP: %s\nOUT: %s\n\n", band1, output);
