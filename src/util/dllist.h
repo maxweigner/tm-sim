@@ -6,6 +6,8 @@ struct dnode {
   char value;
 };
 
+struct dnode* dlist_from_string(char input[]);
+
 void dlist_append(struct dnode* start, char value);
 
 struct dnode* dlist_prepend(struct dnode* start, char value);

@@ -4,6 +4,17 @@
 #include "dllist.h"
 
 
+struct dnode* dlist_from_string(char input[]) {
+  struct dnode* new_list = malloc(sizeof(struct dnode));
+  
+  for (int i = 0; i < strlen(input); ++i) {
+    dlist_append(new_list, input[i]);
+  }
+  
+  return new_list;
+}
+
+
 void dlist_append(struct dnode* start, char value) {
   if (start == NULL) {
     start = malloc(sizeof(struct dnode));

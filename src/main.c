@@ -12,9 +12,6 @@
 // max size of a single state
 #define STATE_SIZE 8
 
-// maximum input string (tm definition) length
-#define MAX_INPUT_SIZE 1024
-
 // max number of steps
 #define MAX_STEPS_NUM 60
 
@@ -35,8 +32,8 @@ struct turing {
 
 
 struct state {
-  char  state [STATE_SIZE]    ;
-  char  band  [MAX_INPUT_SIZE];
+  char  state [STATE_SIZE];
+  struct dnode*  band;
   long  band_location;
 };
 
@@ -55,7 +52,7 @@ void clean_string(char input[], char io) {
   }
 
   // create new string where input gets parsed into
-  char rem[MAX_INPUT_SIZE] = {'\0'};
+  char* rem = malloc(strlen(input));
 
   int rem_index = 0; // tracks index of next char
   int input_length = strlen(input); // just read the code
@@ -196,42 +193,33 @@ void parse_steps(char input[]) {
 
 // returns the index in steps array of the applicable step
 void run_tm(struct state* state) {
+  struct dnode* band = state->band;
   // while neither accepting or rejecting state are reached
   while (strcmp(tim.accept, (*state).state) && strcmp(tim.reject, (*state).state)) {
     // go over every possible step and
     for (int i = 0; i < MAX_STEPS_NUM; ++i) {
-      char band = 
-        (*state).band_location > strlen((*state).band) -1 ||
-        (*state).band_location < 0 
-        ? '_' : (*state).band[(*state).band_location];
-      
       // if satisfying below conditions, execute step
-      if (!strcmp(steps[i][0], (*state).state) && band == steps[i][1][0]) {
+      if (!strcmp(steps[i][0], (*state).state) && band->value == steps[i][1][0]) {
         // print the used step
         // printf("%s %s -> %s %s %s\n", steps[i][0], steps[i][1], steps[i][2], steps[i][3], steps[i][4]);
+        band->value = steps[i][3][0];
 
-        // shift entire band right if modifying left of band
-        if ((*state).band_location < 0) {
-          long band_size = strlen((*state).band);
-
-          for (int i = band_size -1; i > -1; --i) {
-            (*state).band[i+1] = (*state).band[i];
-          }
-
-          (*state).band_location++;
-        }
-
-        (*state).band[(*state).band_location] = steps[i][3][0];
         memset((*state).state, '\0', STATE_SIZE);
         strcpy((*state).state, steps[i][2]);
 
         switch (steps[i][4][0]) {
           case '>':
-            (*state).band_location++;
+            if (band->next == NULL) {
+              dlist_append(band, '_');
+            }
+            band = band->next;
             break;
           
           case '<':
-            (*state).band_location--;
+            if (band->prev == NULL) {
+              dlist_prepend(band, '_');
+            }
+            band = band->prev;
             break;
           
           case '-':
@@ -247,21 +235,16 @@ void run_tm(struct state* state) {
 
 
 // runs the simulator
-void start_tm(char tm[], char input_band[], char output_band[]) {
-  memset(output_band, '\0', strlen(output_band));
-
+char* start_tm(char tm[], char input_band[]) {
   if (tim.start == tim.accept) {
     printf("do you actually want me to do something?\n");
-    return;
-
-  } else if (strlen(input_band) > MAX_INPUT_SIZE) {
-    printf("input too big, aborting\n");
-    return;
+    return "";
   }
 
-  // clean up input
+  // clean input and convert input to dlist
   clean_input(tm);
   clean_input(input_band);
+  struct dnode* band_list = dlist_from_string(input_band);
 
   // parse defining features of tm
   parse_definition(tm);
@@ -269,20 +252,21 @@ void start_tm(char tm[], char input_band[], char output_band[]) {
   // parse conversion steps of tm
   parse_steps(tm);
 
-  char output[MAX_INPUT_SIZE] = {'\0'};
-  struct state state = {{'\0'}, {'\0'}, 0};
+  struct state state = {{'\0'}, NULL, 0};
 
   strcpy(state.state, tim.start);
-  strcpy(state.band, input_band);
+  state.band = band_list;
   
   run_tm(&state);
+
+  char* output = dlist_to_string(band_list);
   
-  clean_output(state.band);
-  strcpy(output_band, state.band);
+  clean_output(output);
+  return output;
 }
 
 
-void dll_test() {
+void dll_test(char input[]) {
   struct dnode* start = malloc(sizeof(struct dnode));
 
   dlist_append(start, 'b');
@@ -292,7 +276,11 @@ void dll_test() {
   
   dlist_insert(start, 'c', 2);
   
-  printf("%s\n", dlist_to_string(start));
+  printf("dlist_to_string: %s\n", dlist_to_string(start));
+
+  clean_input(input);
+  struct dnode* list_from_string = dlist_from_string(input);
+  printf("dlist_from_string: %s\n\n", dlist_to_string(list_from_string));
 }
 
 
@@ -338,59 +326,51 @@ int main(int argc, char *argv[]) {
     "q1, 1 -> q1, 1, <;"
     "q1, _ -> q2, _, >";
   
-  char output[MAX_INPUT_SIZE] = {'\0'};
+  char* output;
 
   char band1[] = "0110 1001 0101 1010 1111 0000 1111 0000";
   char band2[] = "1001 0110 1010 0101 0110 1001 0101 1010";
   char band3[] = "1111 0000 1111 0000 1001 0110 1010 0101";
 
-  // dll_test();
-  // return 0;
+  // dll_test(band1);
 
   //-----------------------------------------
   printf("INCREMENT\n");
 
-  start_tm(tm1, band1, output);
+  output = start_tm(tm1, band1);
   printf("INP: %s\nOUT: %s\n\n", band1, output);
-  memset(output, '\0', strlen(output));
 
-  start_tm(tm1, band2, output);
+  output = start_tm(tm1, band2);
   printf("INP: %s\nOUT: %s\n\n", band2, output);
-  memset(output, '\0', strlen(output));
   
-  start_tm(tm1, band3, output);
+  output = start_tm(tm1, band3);
   printf("INP: %s\nOUT: %s\n\n", band3, output);
-  memset(output, '\0', strlen(output));
   
   //-----------------------------------------
   printf("\nDECREMENT\n");
 
-  start_tm(tm2, band1, output);
+  output = start_tm(tm2, band1);
   printf("INP: %s\nOUT: %s\n\n", band1, output);
-  memset(output, '\0', strlen(output));
   
-  start_tm(tm2, band2, output);
+  output = start_tm(tm2, band2);
   printf("INP: %s\nOUT: %s\n\n", band2, output);
-  memset(output, '\0', strlen(output));
   
-  start_tm(tm2, band3, output);
+  output = start_tm(tm2, band3);
   printf("INP: %s\nOUT: %s\n\n", band3, output);
-  memset(output, '\0', strlen(output));
 
   //-----------------------------------------
   printf("\nFUNCTION 2*X\n");
   
-  start_tm(tm3, band1, output);
+  output = start_tm(tm3, band1);
   printf("INP: %s\nOUT: %s\n\n", band1, output);
-  memset(output, '\0', strlen(output));
   
-  start_tm(tm3, band2, output);
+  output = start_tm(tm3, band2);
   printf("INP: %s\nOUT: %s\n\n", band2, output);
-  memset(output, '\0', strlen(output));
   
-  start_tm(tm3, band3, output);
+  output = start_tm(tm3, band3);
   printf("INP: %s\nOUT: %s\n\n", band3, output);
-  memset(output, '\0', strlen(output));
   //-----------------------------------------
+  
+  return 0;
 }
 
