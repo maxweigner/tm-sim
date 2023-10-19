@@ -5,21 +5,17 @@
 #include "util/dllist.h"
 
 
-// BUFSIZE has to be larger than STATE_SIZE
-// size of parsing buffer
-#define BUFSIZE 16
-
 // max size of a single state
 #define STATE_SIZE 8
 
 // max number of steps
-#define MAX_STEPS_NUM 60
-
-// max size of single entry in step
-#define MAX_STEPS_SIZE 16
+#define MAX_RULE_NUM 60
 
 // number of variables contained in a single step
-#define VARS_IN_STEP 5
+#define VARS_IN_RULE 5
+
+// max size of single entry in step
+#define MAX_RULE_SIZE 16
 
 
 // here are the defining features of the tm 
@@ -39,7 +35,7 @@ struct state {
 
 
 struct turing tim = {0, {'\0'}, {'\0'}, {'\0'}};
-char steps[MAX_STEPS_NUM][VARS_IN_STEP][MAX_STEPS_SIZE] = {{{'\0'}}};
+char steps[MAX_RULE_NUM][VARS_IN_RULE][MAX_RULE_SIZE] = {{{'\0'}}};
 
 
 void clean_string(char input[], char io) {
@@ -102,7 +98,7 @@ void buf_reset(char arr[]) {
 
 
 void parse_definition(char input[]) {
-  char buf[BUFSIZE] = {'\0'}; // buffer
+  char buf[STATE_SIZE] = {'\0'}; // buffer
   short buf_index = 0; // tracks next char in buffer
   short sem_count = 0; // tracks count of semicolons
 
@@ -114,15 +110,15 @@ void parse_definition(char input[]) {
           break;
 
         case 1: // copy over starting state
-          memcpy(tim.start, buf, STATE_SIZE-1);
+          memcpy(tim.start, buf, STATE_SIZE);
           break;
 
         case 2: // copy over accepting state
-          memcpy(tim.accept, buf, STATE_SIZE-1);
+          memcpy(tim.accept, buf, STATE_SIZE);
           break;
 
         case 3: // copy over rejecting state
-          memcpy(tim.reject, buf, STATE_SIZE-1);
+          memcpy(tim.reject, buf, STATE_SIZE);
           return;
       }
       
@@ -139,7 +135,7 @@ void parse_definition(char input[]) {
 
 
 void parse_steps(char input[]) {
-  char buf[BUFSIZE] = {'\0'}; // buffer
+  char buf[STATE_SIZE] = {'\0'}; // buffer
   short buf_index = 0; // tracks index of next char in buffer 
   short sem_count = 0; // tracks the number of semicolons counted
   short input_start_index = 0; // index of first char after definition
@@ -197,7 +193,7 @@ void run_tm(struct state* state) {
   // while neither accepting or rejecting state are reached
   while (strcmp(tim.accept, (*state).state) && strcmp(tim.reject, (*state).state)) {
     // go over every possible step and
-    for (int i = 0; i < MAX_STEPS_NUM; ++i) {
+    for (int i = 0; i < MAX_RULE_NUM; ++i) {
       // if satisfying below conditions, execute step
       if (!strcmp(steps[i][0], (*state).state) && band->value == steps[i][1][0]) {
         // print the used step
@@ -266,22 +262,22 @@ char* start_tm(char tm[], char input_band[]) {
 }
 
 
-void dll_test(char input[]) {
-  struct dnode* start = malloc(sizeof(struct dnode));
-
-  dlist_append(start, 'b');
-  dlist_append(start, 'd');
-  
-  start = dlist_prepend(start, 'a');
-  
-  dlist_insert(start, 'c', 2);
-  
-  printf("dlist_to_string: %s\n", dlist_to_string(start));
-
-  clean_input(input);
-  struct dnode* list_from_string = dlist_from_string(input);
-  printf("dlist_from_string: %s\n\n", dlist_to_string(list_from_string));
-}
+// void dll_test(char input[]) {
+//   struct dnode* start = malloc(sizeof(struct dnode));
+//
+//   dlist_append(start, 'b');
+//   dlist_append(start, 'd');
+//   
+//   start = dlist_prepend(start, 'a');
+//   
+//   dlist_insert(start, 'c', 2);
+//   
+//   printf("dlist_to_string: %s\n", dlist_to_string(start));
+//
+//   clean_input(input);
+//   struct dnode* list_from_string = dlist_from_string(input);
+//   printf("dlist_from_string_to_string: %s\n\n", dlist_to_string(list_from_string));
+// }
 
 
 int main(int argc, char *argv[]) {
@@ -332,6 +328,8 @@ int main(int argc, char *argv[]) {
   char band2[] = "1001 0110 1010 0101 0110 1001 0101 1010";
   char band3[] = "1111 0000 1111 0000 1001 0110 1010 0101";
 
+
+  //-----------------------------------------
   // dll_test(band1);
 
   //-----------------------------------------
