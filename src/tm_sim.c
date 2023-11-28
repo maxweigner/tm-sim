@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include "util/dllist.h"
-#include "tm-sim.h"
+#include "tm_sim.h"
 
 
 void clean_string(char input[], char io) {
