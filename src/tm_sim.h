@@ -1,8 +1,8 @@
 #ifndef TM_SIM
 
-#define TM_OKAY 0;
-#define TM_ACCEPT 2;
-#define TM_REJECT 3;
+#define TM_OKAY 0
+#define TM_ACCEPT 2
+#define TM_REJECT 3
 
 // max size of a single state
 // e.g. "q0"
