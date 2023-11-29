@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CLionExternalBuildManager">
+    <target id="0bb094ea-cf95-4c93-baca-d3510e968629" name="Default" defaultType="MAKE">
+      <configuration id="b855bd5d-2bd7-4b2b-bfda-f83984fbaac5" name="Default" toolchainName="Default" />
+    </target>
+    <target id="9d4e2011-0f06-4756-90e7-57231c7de9e2" name="Debug" defaultType="MAKE">
+      <configuration id="2bf4182c-7d66-481f-96f9-cb42eab412e8" name="Debug" toolchainName="Debug" />
+    </target>
+  </component>
+</project>

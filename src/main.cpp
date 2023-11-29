@@ -1,4 +1,5 @@
 #include "tm_sim.h"
+#include <cstdio>
 
 int main (int argc, char *argv[]) {
   char def[] = 
@@ -10,6 +11,14 @@ int main (int argc, char *argv[]) {
   ;
 
   struct turing* tm = tm_create_machine(def);
+
+  for (int i = 0; i < MAX_RULE_NUM; ++i) {
+    for (int j = 0; j < VARS_IN_RULE; ++j) {
+      printf("%s\n", tm->steps[i][j]);
+    }
+  }
+
+  tm_delete_machine(tm);
 
   return 0;
 }

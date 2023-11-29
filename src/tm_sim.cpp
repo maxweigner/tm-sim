@@ -32,6 +32,7 @@ void clean_string(char *input, const char io) {
   }
 
   memcpy(input, rem, strlen(rem)); // save cleaned input
+  free(rem);
 }
 
 
@@ -48,7 +49,7 @@ void clean_output(char *output) {
 // this function assumes arr contains only numbers
 // converts string representation of integer to int
 // i.e. "132" to 132
-int buf_sum(char arr[]) {
+int buf_sum(char* arr) {
   int sum = 0;
   int pot = 0;
 
@@ -60,7 +61,7 @@ int buf_sum(char arr[]) {
 }
 
 
-void buf_reset(char arr[]) {
+void buf_reset(char* arr) {
   memset(arr, '\0', strlen(arr));
 }
 
@@ -104,20 +105,20 @@ void parse_definition(struct turing* turing, char input[]) {
 
 void parse_steps(struct turing* turing, char input[]) {
   // char buf[MAX_RULE_SIZE] = {'\0'}; // buffer
-  char *buf = (char*) malloc(MAX_RULE_SIZE * sizeof(char));
-  memset(buf, '\0', MAX_RULE_SIZE);
+  char *buf = (char*) malloc(STATE_SIZE * sizeof(char));
+  memset(buf, '\0', STATE_SIZE);
+
   short buf_index = 0; // tracks index of next char in buffer 
   short sem_count = 0; // tracks the number of semicolons counted
   short input_start_index = 0; // index of first char after definition
   short sym_count = 0; // counts ',' and '-' symbols
-  // char ***steps = (char***) malloc(sizeof(char[MAX_RULE_NUM][VARS_IN_RULE][MAX_RULE_SIZE]));
 
   char ***steps = (char***) malloc(MAX_RULE_NUM * sizeof(char**));
 
   for (int i = 0; i < MAX_RULE_NUM; ++i) {
     steps[i] = (char**) malloc(VARS_IN_RULE * sizeof(char*));
     for (int j = 0; j < VARS_IN_RULE; ++j) {
-      steps[i][j] = (char*) malloc(MAX_RULE_SIZE * sizeof(char));
+      steps[i][j] = (char*) malloc(STATE_SIZE * sizeof(char));
     }
   }
 
@@ -133,29 +134,45 @@ void parse_steps(struct turing* turing, char input[]) {
     switch (input[i]) {
       case '-':
         if (input[i-1] == ',') {
-          // skip to after ';' and save '>' (buf empty cause ',')
-          buf[buf_index] = '>';
-          i++;
+          if (i+1 < strlen(input) && input[i+1] != ';') {
+            // skip to after ';' and save '>' (buf empty cause ',')
+            buf[buf_index] = '>';
+            i++;
+          }
         }
-        
-        // i++; (char[])(input[i-1]) + input[i] + input[i+1] + "|" + buf
+
+        if (input[i-1] == '<') {
+          // same shit as with semikolon case below, too tired for today to make it properly
+          i += 2;
+
+          // copy buffer to current step at semicolon_count, symbol_count
+          memcpy(steps[sem_count][sym_count++], buf, strlen(buf));
+
+          sem_count++; // end of step so goto next
+          sym_count = 0; // reset symbol count for next step
+
+          buf_reset(buf); // reset buffer
+          buf_index = 0; // reset buffer index
+
+          break;
+        }
+
+        i++;
 
       case ',':
-        if (i+1 < strlen(input) && input[i+1] != '-')
-          i++; // skip the symbol for next read to buffer if for 
-        
+        i++; // skip the symbol for next read to buffer if for
+        if (input[i] == '-')
+          i++;
+
         // copy buffer to current step at semicolon_count, symbol_count
-        memcpy(steps[sem_count][sym_count++], buf, MAX_RULE_SIZE);
+        memcpy(steps[sem_count][sym_count++], buf, STATE_SIZE);
         
         buf_reset(buf); // reset buffer
         buf_index = 0; // reset buffer index
         break;
 
       case ';':
-        i++; // skip the symbol 
-        
-        if (sym_count == VARS_IN_RULE)
-          return;
+        i++; // skip the symbol
 
         // copy buffer to current step at semicolon_count, symbol_count
         memcpy(steps[sem_count][sym_count++], buf, strlen(buf));
@@ -176,6 +193,7 @@ void parse_steps(struct turing* turing, char input[]) {
   memcpy(steps[sem_count][sym_count++], buf, strlen(buf));
 
   turing -> steps = steps;
+  // free(buf);
 }
 
 
@@ -283,11 +301,11 @@ struct turing* tm_create_machine(char *tm) {
 
   // clean input and convert input to dlist
   clean_input(tm);
-
+  
   // parse input into tm
   parse_definition(turing, tm);
   parse_steps(turing, tm);
-
+  
   // create starting state
   struct state* state = (struct state*) malloc(sizeof(struct state));
   strcpy(state -> state, turing -> start);

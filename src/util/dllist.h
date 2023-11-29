@@ -18,4 +18,6 @@ int dlist_length(struct dnode* start);
 
 char* dlist_to_string(struct dnode* start);
 
+void dlist_free(struct dnode* start);
+
 #endif // !DOUBLELINKEDLIST

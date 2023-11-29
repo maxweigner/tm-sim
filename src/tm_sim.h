@@ -6,7 +6,10 @@
 
 // max size of a single state
 // e.g. "q0"
-#define STATE_SIZE 8
+// #define STATE_SIZE 8
+
+// max number of steps
+#define MAX_RULE_NUM 5
 
 // number of variables contained in a single step
 // e.g. "q0, 0 -> q0, 1, ->"
@@ -14,10 +17,7 @@
 
 // max size of single entry in step
 // e.g. "->"
-#define MAX_RULE_SIZE 16
-
-// max number of steps
-#define MAX_RULE_NUM 60
+#define STATE_SIZE 2
 
 
 // state of the tm

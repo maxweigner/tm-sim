@@ -116,3 +116,19 @@ char* dlist_to_string(struct dnode* start) {
   return ret;
 }
 
+void dlist_free(struct dnode* start) {
+  if (start == NULL)
+    return;
+
+  if (start->next != NULL) {
+    struct dnode* next = start->next;
+    for (int i = 0; i < dlist_length(start)-1; ++i) {
+      free(next->prev);
+      next = next->next;
+    }
+    free(next);
+  }
+
+  free(start);
+}
+
