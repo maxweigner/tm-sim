@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -5,7 +6,7 @@
 #include "tm_sim.h"
 
 
-void clean_string(char input[], char io) {
+void clean_string(char *input, const char io) {
   char c1 = ' ';
   char c2 = '\n';
 
@@ -15,7 +16,7 @@ void clean_string(char input[], char io) {
   }
 
   // create new string where input gets parsed into
-  char* rem = malloc(strlen(input));
+  char* rem = (char*) malloc(strlen(input) * sizeof(char));
 
   int rem_index = 0; // tracks index of next char
   int input_length = strlen(input); // just read the code
@@ -27,19 +28,19 @@ void clean_string(char input[], char io) {
     
     // copy the char if it isnt one of the above
     rem[rem_index++] = input[i];
+    input[i] = '\0';
   }
 
-  memset(input, '\0', input_length); // reset input
   memcpy(input, rem, strlen(rem)); // save cleaned input
 }
 
 
-void clean_input(char input[]) {
+void clean_input(char *input) {
   clean_string(input, 'i');
 }
 
 
-void clean_output(char output[]) {
+void clean_output(char *output) {
   clean_string(output, 'o');
 }
 
@@ -102,12 +103,23 @@ void parse_definition(struct turing* turing, char input[]) {
 
 
 void parse_steps(struct turing* turing, char input[]) {
-  char buf[STATE_SIZE] = {'\0'}; // buffer
+  // char buf[MAX_RULE_SIZE] = {'\0'}; // buffer
+  char *buf = (char*) malloc(MAX_RULE_SIZE * sizeof(char));
+  memset(buf, '\0', MAX_RULE_SIZE);
   short buf_index = 0; // tracks index of next char in buffer 
   short sem_count = 0; // tracks the number of semicolons counted
   short input_start_index = 0; // index of first char after definition
   short sym_count = 0; // counts ',' and '-' symbols
-  char ***steps = malloc(sizeof(char[MAX_RULE_NUM][VARS_IN_RULE][MAX_RULE_SIZE]));
+  // char ***steps = (char***) malloc(sizeof(char[MAX_RULE_NUM][VARS_IN_RULE][MAX_RULE_SIZE]));
+
+  char ***steps = (char***) malloc(MAX_RULE_NUM * sizeof(char**));
+
+  for (int i = 0; i < MAX_RULE_NUM; ++i) {
+    steps[i] = (char**) malloc(VARS_IN_RULE * sizeof(char*));
+    for (int j = 0; j < VARS_IN_RULE; ++j) {
+      steps[i][j] = (char*) malloc(MAX_RULE_SIZE * sizeof(char));
+    }
+  }
 
   // get index where tm steps start
   do {
@@ -117,24 +129,34 @@ void parse_steps(struct turing* turing, char input[]) {
   sem_count = 0; // reset count for context switch
 
   for (int i = input_start_index; i < strlen(input); ++i) {
-    // buf_reset cant be default
+    // buf_reset cant be defaultX_RULE_SIZE
     switch (input[i]) {
       case '-':
-        i++; // same as with ',' but need to skip the two symbols "->"
+        if (input[i-1] == ',') {
+          // skip to after ';' and save '>' (buf empty cause ',')
+          buf[buf_index] = '>';
+          i++;
+        }
+        
+        // i++; (char[])(input[i-1]) + input[i] + input[i+1] + "|" + buf
 
       case ',':
-        i++; // skip the symbol for next read to buffer
+        if (i+1 < strlen(input) && input[i+1] != '-')
+          i++; // skip the symbol for next read to buffer if for 
         
         // copy buffer to current step at semicolon_count, symbol_count
-        memcpy(steps[sem_count][sym_count++], buf, strlen(buf));
+        memcpy(steps[sem_count][sym_count++], buf, MAX_RULE_SIZE);
         
         buf_reset(buf); // reset buffer
         buf_index = 0; // reset buffer index
         break;
 
       case ';':
-        i++; // skip the symbol
+        i++; // skip the symbol 
         
+        if (sym_count == VARS_IN_RULE)
+          return;
+
         // copy buffer to current step at semicolon_count, symbol_count
         memcpy(steps[sem_count][sym_count++], buf, strlen(buf));
         
@@ -256,8 +278,8 @@ int run_tm_single_step(struct turing* turing) {
 }
 
 
-struct turing* tm_create_machine(char tm[]) {
-  struct turing* turing = malloc(sizeof(struct turing));
+struct turing* tm_create_machine(char *tm) {
+  struct turing* turing = (struct turing*) malloc(sizeof(struct turing));
 
   // clean input and convert input to dlist
   clean_input(tm);
@@ -267,7 +289,7 @@ struct turing* tm_create_machine(char tm[]) {
   parse_steps(turing, tm);
 
   // create starting state
-  struct state* state = malloc(sizeof(struct state));
+  struct state* state = (struct state*) malloc(sizeof(struct state));
   strcpy(state -> state, turing -> start);
   turing -> state = state;
   
@@ -275,7 +297,7 @@ struct turing* tm_create_machine(char tm[]) {
 }
 
 
-int tm_set_band(struct turing* turing, char input_band[]) {
+int tm_set_band(struct turing* turing, char *input_band) {
   clean_input(input_band);
 
   if (turing -> state != NULL) {

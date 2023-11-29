@@ -5,7 +5,7 @@
 
 
 struct dnode* dlist_from_string(char input[]) {
-  struct dnode* new_list = malloc(sizeof(struct dnode));
+  struct dnode* new_list = (struct dnode*) malloc(sizeof(struct dnode));
   
   for (int i = 0; i < strlen(input); ++i) {
     dlist_append(new_list, input[i]);
@@ -17,8 +17,9 @@ struct dnode* dlist_from_string(char input[]) {
 
 void dlist_append(struct dnode* start, char value) {
   if (start == NULL) {
-    start = malloc(sizeof(struct dnode));
+    return;
   }
+
   if (start->value == '\0') {
     start->value = value;
     return;
@@ -29,16 +30,16 @@ void dlist_append(struct dnode* start, char value) {
     current = current->next;
   }
 
-  struct dnode* new = malloc(sizeof(struct dnode));
+  struct dnode* newd = (struct dnode*) malloc(sizeof(struct dnode));
 
-  new->value = value;
-  new->prev = current;
-  current->next = new;
+  newd->value = value;
+  newd->prev = current;
+  current->next = newd;
 }
 
 
 struct dnode* dlist_prepend(struct dnode* start, char value) {
-  struct dnode* new_start = malloc(sizeof(struct dnode));
+  struct dnode* new_start = (struct dnode*) malloc(sizeof(struct dnode));
   
   new_start->next = start;
   start->prev = new_start;
@@ -69,7 +70,7 @@ int dlist_insert(struct dnode* start, char value, int index) {
     return -2;
   }
 
-  struct dnode* to_insert = malloc(sizeof(struct dnode));
+  struct dnode* to_insert = (struct dnode*) malloc(sizeof(struct dnode));
 
   to_insert->value = value;
 
@@ -100,7 +101,7 @@ int dlist_length(struct dnode* start) {
 
 
 char* dlist_to_string(struct dnode* start) {
-  char* ret = malloc(dlist_length(start));
+  char* ret = (char*) malloc(dlist_length(start));
   struct dnode* current = start;
 
   for (int i = 0; current->next != NULL; ++i) {

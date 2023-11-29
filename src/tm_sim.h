@@ -38,10 +38,10 @@ struct turing {
 };
 
 // creates the turing machine
-struct turing* tm_create_machine(char tm[]);
+struct turing* tm_create_machine(char *tm);
 
 // sets the band for a given tm
-int tm_set_band(struct turing* turing, char input_band[]);
+int tm_set_band(struct turing* turing, char *input_band);
 
 // frees the allocated memory
 void tm_delete_machine(struct turing* turing);
