@@ -104,8 +104,7 @@ void parse_definition(struct turing* turing, char input[]) {
 
 
 void parse_steps(struct turing* turing, char input[]) {
-  // char buf[MAX_RULE_SIZE] = {'\0'}; // buffer
-  char *buf = (char*) malloc(STATE_SIZE * sizeof(char));
+  char buf[STATE_SIZE] = {'\0'}; // buffer
   memset(buf, '\0', STATE_SIZE);
 
   short buf_index = 0; // tracks index of next char in buffer 
@@ -133,18 +132,9 @@ void parse_steps(struct turing* turing, char input[]) {
     // buf_reset cant be defaultX_RULE_SIZE
     switch (input[i]) {
       case '-':
-        if (input[i-1] == ',') {
-          if (i+1 < strlen(input) && input[i+1] != ';') {
-            // skip to after ';' and save '>' (buf empty cause ',')
-            buf[buf_index] = '>';
-            i++;
-          }
-        }
-
+        // next symbol must be ';'
+        // do everything in ';' case and break
         if (input[i-1] == '<') {
-          // same shit as with semikolon case below, too tired for today to make it properly
-          i += 2;
-
           // copy buffer to current step at semicolon_count, symbol_count
           memcpy(steps[sem_count][sym_count++], buf, strlen(buf));
 
@@ -153,16 +143,23 @@ void parse_steps(struct turing* turing, char input[]) {
 
           buf_reset(buf); // reset buffer
           buf_index = 0; // reset buffer index
-
+          
+          // skip semikolon
+          i += 2;
           break;
         }
 
+        // next symbol must be '>'
+        if (input[i-1] == ',')
+          buf[buf_index] = '>';
+        
+        //skip next symbol
         i++;
+
+        // do all in next step below
 
       case ',':
         i++; // skip the symbol for next read to buffer if for
-        if (input[i] == '-')
-          i++;
 
         // copy buffer to current step at semicolon_count, symbol_count
         memcpy(steps[sem_count][sym_count++], buf, STATE_SIZE);
@@ -193,7 +190,6 @@ void parse_steps(struct turing* turing, char input[]) {
   memcpy(steps[sem_count][sym_count++], buf, strlen(buf));
 
   turing -> steps = steps;
-  // free(buf);
 }
 
 
@@ -262,7 +258,6 @@ int run_tm_single_step(struct turing* turing) {
     // if satisfying below conditions, execute step
     if (!strcmp(steps[i][0], state->state) && band->value == steps[i][1][0]) {
       // print the used step
-      // printf("%s %s -> %s %s %s\n", steps[i][0], steps[i][1], steps[i][2], steps[i][3], steps[i][4]);
       band->value = steps[i][3][0];
 
       memset(state->state, '\0', STATE_SIZE);
@@ -308,7 +303,10 @@ struct turing* tm_create_machine(char *tm) {
   
   // create starting state
   struct state* state = (struct state*) malloc(sizeof(struct state));
+  state -> band_location = 0;
+  state -> band = NULL;
   strcpy(state -> state, turing -> start);
+
   turing -> state = state;
   
   return turing;
@@ -318,7 +316,8 @@ struct turing* tm_create_machine(char *tm) {
 int tm_set_band(struct turing* turing, char *input_band) {
   clean_input(input_band);
 
-  if (turing -> state != NULL) {
+  if (turing -> state -> band != NULL) {
+    dlist_free(turing -> state -> band);
     free(turing -> state);
     turing -> state = NULL;
   }

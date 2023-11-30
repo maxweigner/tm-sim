@@ -17,7 +17,8 @@
 
 // max size of single entry in step
 // e.g. "->"
-#define STATE_SIZE 2
+// MUST INCLUDE ONE SPACE FOR '\0'!
+#define STATE_SIZE 3
 
 
 // state of the tm

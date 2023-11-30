@@ -22,6 +22,7 @@ void dlist_append(struct dnode* start, char value) {
 
   if (start->value == '\0') {
     start->value = value;
+    start->next = NULL;
     return;
   }
 
@@ -34,6 +35,7 @@ void dlist_append(struct dnode* start, char value) {
 
   newd->value = value;
   newd->prev = current;
+  newd->next = NULL;
   current->next = newd;
 }
 
@@ -42,17 +44,25 @@ struct dnode* dlist_prepend(struct dnode* start, char value) {
   struct dnode* new_start = (struct dnode*) malloc(sizeof(struct dnode));
   
   new_start->next = start;
+  new_start->prev = NULL;
+  new_start->value = value;
+
   start->prev = new_start;
 
-  new_start->value = value;
   return new_start;
 }
 
-
+// return values: 
+// +0:ok
+// -1:start==null
+// -2:index out of range
 int dlist_insert(struct dnode* start, char value, int index) {
-  if (start == NULL && index != 0) {
-    printf("Insert on given index invalid\n");
+  if (start == NULL) {
     return -1;
+  }
+
+  if (index - 1 == dlist_length(start)) {
+    dlist_append(start, value);
   }
   
   if (index == 0) {
@@ -62,20 +72,17 @@ int dlist_insert(struct dnode* start, char value, int index) {
 
   struct dnode* current = start;
   for (int i = 0; i != index-1; ++i) {
-    current = current->next;
-  }
+    if (current -> next == NULL)
+      return -2;
 
-  if (current == NULL) {
-    printf("Insert on given index invalid\n");
-    return -2;
+    current = current->next;
   }
 
   struct dnode* to_insert = (struct dnode*) malloc(sizeof(struct dnode));
 
-  to_insert->value = value;
-
   to_insert->next = current->next;
   to_insert->prev = current;
+  to_insert->value = value;
 
   current->next = to_insert;
   
